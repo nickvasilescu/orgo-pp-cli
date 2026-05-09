@@ -1,0 +1,8 @@
+{
+  "dir": "/Users/nickvasilescu/printing-press/.runstate/buffalo-19e5c14c/runs/20260508-215235/working/orgo-pp-cli",
+  "workflows": null,
+  "verdict": "workflow-pass",
+  "issues": [
+    "no workflow manifest found, skipping"
+  ]
+}

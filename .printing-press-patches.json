@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "applied_at": "2026-05-08",
+  "base_run_id": "20260508-215235",
+  "base_printing_press_version": "4.1.0",
+  "patches": [
+    {
+      "id": "actions-ledger-leaf-hooks",
+      "summary": "After-call best-effort hooks logging bash/click/screenshot/exec/key actions to the local SQLite ledger powering audit/grep/replay/idle/oversized/cost.",
+      "reason": "The novel commands (audit, grep, replay, idle, oversized, cost) read a local actions ledger that has no live-API equivalent. The ledger has to be populated from the leaf commands themselves; placing the hook anywhere else would make those novel commands a hollow promise.",
+      "files": [
+        "internal/cli/computers_bash_execute.go",
+        "internal/cli/computers_click_mouse.go",
+        "internal/cli/computers_screenshot_get.go",
+        "internal/cli/computers_exec_execute-python.go",
+        "internal/cli/computers_key_press.go"
+      ],
+      "validated_outcome": "Each leaf logs only after a successful API call; logging errors are silently swallowed via _ = logActionBestEffort(...). Screenshot guards on prov.Source == \"live\" so cache reads are not double-counted.",
+      "upstream_issue": ""
+    }
+  ]
+}
