@@ -3,6 +3,7 @@
 /orgo-pp-mcp
 
 # Build artifacts
+/bin/
 /build/
 /dist/
 

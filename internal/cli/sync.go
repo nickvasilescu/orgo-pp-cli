@@ -6,9 +6,9 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nickvasilescu/orgo-pp-cli/internal/store"
 	"github.com/spf13/cobra"
 	"net/url"
-	"github.com/nickvasilescu/orgo-pp-cli/internal/store"
 	"os"
 	"regexp"
 	"strconv"

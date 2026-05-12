@@ -234,15 +234,23 @@ func asStr(v any) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// PATCH(fleet-projects-envelope): accept {"projects":[...]} so fleet sees the live Orgo response.
 // extractWorkspaces unwraps the /workspaces response into []map[string]any.
-// Handles both bare-array and {"workspaces":[...]} shapes.
+// Handles bare-array, {"workspaces":[...]}, and {"projects":[...]} shapes —
+// the last one because the live API exposes workspaces as projects (see
+// rewriteSpecPath in internal/client/client.go).
 func extractWorkspaces(data json.RawMessage) []map[string]any {
-	// Try {"workspaces":[...]} envelope first.
 	var envelope struct {
 		Workspaces []map[string]any `json:"workspaces"`
+		Projects   []map[string]any `json:"projects"`
 	}
-	if err := json.Unmarshal(data, &envelope); err == nil && envelope.Workspaces != nil {
-		return envelope.Workspaces
+	if err := json.Unmarshal(data, &envelope); err == nil {
+		if envelope.Workspaces != nil {
+			return envelope.Workspaces
+		}
+		if envelope.Projects != nil {
+			return envelope.Projects
+		}
 	}
 	var direct []map[string]any
 	if err := json.Unmarshal(data, &direct); err == nil {

@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/client"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/config"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/store"
+	"github.com/spf13/cobra"
 )
 
 // looksLikeDoctorInterstitial reports whether the response body matches a known
@@ -172,7 +172,11 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 					} else if reachErr != nil && !errors.As(reachErr, &reachAPIErr) {
 						report["credentials"] = "skipped (API unreachable)"
 					} else {
-						verifyPath := "/"
+						// PATCH(doctor-authenticated-probe): probe an authenticated endpoint, not `/`.
+						// Probe a known authenticated endpoint. /workspaces is rewritten
+						// to /projects by the client transport and is the canonical
+						// authenticated GET for this API — 401/403 here is definitive.
+						verifyPath := "/workspaces"
 						authParams := map[string]string{}
 						authHeaders := map[string]string{}
 						authHeaders["Authorization"] = authHeader
@@ -185,16 +189,11 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 						case errors.As(authErr, &authAPIErr):
 							switch {
 							case authAPIErr.StatusCode == 401 || authAPIErr.StatusCode == 403:
-								// The probe hit the bare base URL because no auth.verify_path
-								// is configured in the spec. Many APIs return 401/403 from a
-								// bare versioned root regardless of token validity (the path
-								// isn't routed but the gateway still demands credentials).
-								// Don't claim invalid without certainty — set verify_path to
-								// a known-good authenticated GET (e.g. /me, /v1/account, /user)
-								// for a definitive verdict.
-								report["credentials"] = fmt.Sprintf("inconclusive (HTTP %d from base URL — set auth.verify_path in spec for a definitive probe)", authAPIErr.StatusCode)
+								report["credentials"] = fmt.Sprintf("invalid (HTTP %d from %s)", authAPIErr.StatusCode, verifyPath)
+							case authAPIErr.StatusCode == 404:
+								report["credentials"] = fmt.Sprintf("inconclusive (HTTP 404 from %s — endpoint missing; update doctor verify path)", verifyPath)
 							default:
-								// Non-auth HTTP error (404, 500, etc.) — don't blame credentials
+								// Non-auth HTTP error (5xx etc.) — auth wasn't rejected
 								report["credentials"] = fmt.Sprintf("ok (HTTP %d from %s, but auth was accepted)", authAPIErr.StatusCode, verifyPath)
 							}
 						default:
