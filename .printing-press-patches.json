@@ -57,6 +57,16 @@
       ],
       "validated_outcome": "Example now copy-pastes successfully against a real workspace ID.",
       "upstream_issue": "TO-FILE: cli-printing-press README examples should reflect actual generated flag names"
+    },
+    {
+      "id": "cache-key-auth-fingerprint",
+      "summary": "Response cache key now includes a hash of the configured auth header and sorts params before hashing, so different API keys can't share cache buckets and map iteration order can't perturb the key.",
+      "reason": "Generic PP bug. The cache key was sha256(path + map-iterated params) and ignored credentials entirely. Effect: a `--data-source live` (or default) call with an invalid key served the cached response from a previous valid-key call, leaking data and masking 401s as exit 0. Also: map iteration order is non-deterministic in Go, so identical requests with multiple params could land on different cache files run-to-run, defeating the cache.",
+      "files": [
+        "internal/client/client.go"
+      ],
+      "validated_outcome": "After populating the cache with a good key, the same request with a bad key gets cache-miss -> live API -> 401 -> exit 4. Good-key requests still hit cache (verified by repeated calls without --no-cache).",
+      "upstream_issue": "TO-FILE: cli-printing-press cache key must include auth fingerprint and sorted params"
     }
   ]
 }

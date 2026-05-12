@@ -89,10 +89,24 @@ func (c *Client) ProbeGet(path string) (int, error) {
 	return status, err
 }
 
+// PATCH(cache-key-auth-fingerprint): include credential fingerprint and sort
+// params so different API keys get different cache buckets and map iteration
+// order can't perturb the key.
 func (c *Client) cacheKey(path string, params map[string]string) string {
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	key := path
-	for k, v := range params {
-		key += k + "=" + v
+	for _, k := range keys {
+		key += "&" + k + "=" + params[k]
+	}
+	if c.Config != nil {
+		// Hash the auth header so cache files don't reveal the credential but
+		// different credentials still hit different buckets.
+		authHash := sha256.Sum256([]byte(c.Config.AuthHeader()))
+		key += "|auth=" + hex.EncodeToString(authHash[:4])
 	}
 	h := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(h[:8])
