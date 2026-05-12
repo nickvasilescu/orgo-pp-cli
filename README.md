@@ -22,17 +22,35 @@ npx -y @mvanhorn/printing-press install orgo
 npx -y @mvanhorn/printing-press install orgo --cli-only
 ```
 
+### From source (Go required)
+
+```bash
+git clone https://github.com/nickvasilescu/orgo-pp-cli
+cd orgo-pp-cli
+go build -o bin/orgo-pp-cli ./cmd/orgo-pp-cli
+go build -o bin/orgo-pp-mcp ./cmd/orgo-pp-mcp
+```
+
+Or directly:
+
+```bash
+go install github.com/nickvasilescu/orgo-pp-cli/cmd/orgo-pp-cli@latest
+go install github.com/nickvasilescu/orgo-pp-cli/cmd/orgo-pp-mcp@latest
+```
+
 ### Pre-built binary
 
-Download for your platform from the [latest release](https://github.com/mvanhorn/printing-press-library/releases/tag/orgo-current).
+Download for your platform from the [latest release on `nickvasilescu/orgo-pp-cli`](https://github.com/nickvasilescu/orgo-pp-cli/releases/latest). Each release ships `orgo-pp-cli` and `orgo-pp-mcp` for macOS (Intel + Apple Silicon), Linux (amd64 + arm64), and Windows (amd64 + arm64).
 
 ```bash
 # macOS — clear Gatekeeper quarantine
-xattr -d com.apple.quarantine ./orgo-pp-cli
+xattr -d com.apple.quarantine ./orgo-pp-cli ./orgo-pp-mcp
 
 # Unix — mark executable
-chmod +x ./orgo-pp-cli
+chmod +x ./orgo-pp-cli ./orgo-pp-mcp
 ```
+
+Once `mvanhorn/printing-press-library` PR #483 merges, prebuilt bundles will also be available at the upstream library's [`orgo-current` release tag](https://github.com/mvanhorn/printing-press-library/releases/tag/orgo-current) (same binaries, plus an MCPB bundle for one-click Claude Desktop install).
 
 <!-- pp-hermes-install-anchor -->
 ### Install for Hermes
@@ -432,13 +450,9 @@ done
 
 ## Use with Claude Desktop
 
-This CLI ships an [MCPB](https://github.com/modelcontextprotocol/mcpb) bundle — Claude Desktop's standard format for one-click MCP extension installs (no JSON config required).
+The simplest path right now is manual JSON config (see below) using the `orgo-pp-mcp` binary from this repo's releases.
 
-1. Download the `.mcpb` for your platform from the [latest release](https://github.com/mvanhorn/printing-press-library/releases/tag/orgo-current).
-2. Double-click the `.mcpb` file. Claude Desktop opens and walks you through the install.
-3. Fill in `ORGO_API_KEY` when Claude Desktop prompts you.
-
-Requires Claude Desktop 1.0.0 or later. Pre-built bundles ship for macOS Apple Silicon (`darwin-arm64`) and Windows (`amd64`, `arm64`).
+Once `mvanhorn/printing-press-library` PR #483 merges, a signed [MCPB](https://github.com/modelcontextprotocol/mcpb) bundle (Claude Desktop's one-click format) will be available from the upstream library's release tag — just download the `.mcpb`, double-click, fill in `ORGO_API_KEY`, done.
 
 <details>
 <summary>Manual JSON config (advanced)</summary>
