@@ -172,6 +172,7 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 					} else if reachErr != nil && !errors.As(reachErr, &reachAPIErr) {
 						report["credentials"] = "skipped (API unreachable)"
 					} else {
+						// PATCH(doctor-authenticated-probe): probe an authenticated endpoint, not `/`.
 						// Probe a known authenticated endpoint. /workspaces is rewritten
 						// to /projects by the client transport and is the canonical
 						// authenticated GET for this API — 401/403 here is definitive.

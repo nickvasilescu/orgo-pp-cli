@@ -234,6 +234,7 @@ func asStr(v any) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// PATCH(fleet-projects-envelope): accept {"projects":[...]} so fleet sees the live Orgo response.
 // extractWorkspaces unwraps the /workspaces response into []map[string]any.
 // Handles bare-array, {"workspaces":[...]}, and {"projects":[...]} shapes —
 // the last one because the live API exposes workspaces as projects (see

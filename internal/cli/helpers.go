@@ -487,6 +487,7 @@ func filterFieldsRec(data json.RawMessage, paths [][]string) json.RawMessage {
 				filtered[k] = filterFieldsRec(v, subs)
 			}
 		}
+		// PATCH(select-envelope-descent): apply selector to wrapped list items.
 		// Envelope fallback: if no top-level keys matched, the data is likely
 		// a list envelope like {"projects": [...]} where the user intended the
 		// selector to apply to each item. Recurse into array-valued fields and
