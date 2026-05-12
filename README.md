@@ -64,7 +64,7 @@ orgo workspaces list
 
 
 # Spin up a new desktop
-orgo computers create --workspace prod --name agent-1 --cpu 2 --ram 8
+orgo computers create --workspace-id <workspace-uuid> --name agent-1 --cpu 2 --ram 8
 
 
 # Pull the framebuffer; lands in the local actions store too

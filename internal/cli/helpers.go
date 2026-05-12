@@ -472,17 +472,33 @@ func filterFieldsRec(data json.RawMessage, paths [][]string) json.RawMessage {
 			}
 		}
 		filtered := map[string]json.RawMessage{}
+		matchedAny := false
 		for k, v := range obj {
 			matched := matchSelectSegment(k, keepWhole, subPaths)
 			if matched == "" {
 				continue
 			}
+			matchedAny = true
 			if keepWhole[matched] {
 				filtered[k] = v
 				continue
 			}
 			if subs := subPaths[matched]; subs != nil {
 				filtered[k] = filterFieldsRec(v, subs)
+			}
+		}
+		// Envelope fallback: if no top-level keys matched, the data is likely
+		// a list envelope like {"projects": [...]} where the user intended the
+		// selector to apply to each item. Recurse into array-valued fields and
+		// preserve non-array fields verbatim.
+		if !matchedAny {
+			for k, v := range obj {
+				var arr []json.RawMessage
+				if json.Unmarshal(v, &arr) == nil {
+					filtered[k] = filterFieldsRec(v, paths)
+				} else {
+					filtered[k] = v
+				}
 			}
 		}
 		result, _ := json.Marshal(filtered)
