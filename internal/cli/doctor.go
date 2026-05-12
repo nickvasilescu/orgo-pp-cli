@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/client"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/config"
 	"github.com/nickvasilescu/orgo-pp-cli/internal/store"
+	"github.com/spf13/cobra"
 )
 
 // looksLikeDoctorInterstitial reports whether the response body matches a known

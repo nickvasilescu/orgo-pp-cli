@@ -218,7 +218,7 @@ func RegisterTools(s *server.MCPServer) {
 	)
 	s.AddTool(
 		mcplib.NewTool("computers_stream_get-status",
-			mcplib.WithDescription("Returns the current streaming status. Required: id."),
+			mcplib.WithDescription("Get the current RTMP display-stream status for a computer. Required: id (computer ID). Returns a status enum (idle, streaming, terminated), the streamer process start_time, and the streamer pid. Use this to check whether computers_stream_start succeeded and the framebuffer is currently being broadcast before reading network traffic with computers_screenshot or starting a recorder."),
 			mcplib.WithString("id", mcplib.Required(), mcplib.Description("Computer ID")),
 			mcplib.WithReadOnlyHintAnnotation(true),
 			mcplib.WithDestructiveHintAnnotation(false),
@@ -358,7 +358,7 @@ func RegisterTools(s *server.MCPServer) {
 	)
 	s.AddTool(
 		mcplib.NewTool("workspaces_list",
-			mcplib.WithDescription("Returns all workspaces for the authenticated user."),
+			mcplib.WithDescription("List all workspaces owned by the authenticated user. Returns an array of workspace objects, each with id, name, user_id, status (active|inactive), icon_url, created_at, and updated_at. Workspaces are the top-level container for computers; use this to discover the workspace id you pass to computers_create or computers_list. No parameters; the response is not paginated."),
 			mcplib.WithReadOnlyHintAnnotation(true),
 			mcplib.WithDestructiveHintAnnotation(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
@@ -692,7 +692,7 @@ func handleSQL(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToo
 func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	ctx := map[string]any{
 		"api":         "orgo",
-		"description": "The audit ledger Orgo doesn't otherwise have, plus every existing Orgo SDK feature in one Go binary.",
+		"description": "Desktop infrastructure for AI agents. Create workspaces, provision virtual computers, and control them programmatically.",
 		"archetype":   "generic",
 		"tool_count":  33,
 		// tool_surface tells agents which surface a capability lives on.
@@ -740,24 +740,24 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		// Command-mirror capabilities are exposed through MCP by shelling out
 		// to the companion CLI binary.
 		"command_mirror_capabilities": []map[string]string{
-			{"name": "Agent Action Replay", "command": "replay", "description": "Generate a self-contained static HTML timeline of every screenshot, click, bash, and exec your agent ran on a computer.", "rationale": "Orgo's API returns one screenshot or bash result at a time; the timeline is a local artifact built across many calls...", "via": "mcp-command-mirror"},
-			{"name": "Audit Trail", "command": "audit", "description": "Chronological table of every CLI-driven action against your computers in a time window, scoped by workspace,...", "rationale": "Orgo does not expose a per-account action log; this is reconstructed entirely from the CLI's local actions store.", "via": "mcp-command-mirror"},
-			{"name": "Action Grep", "command": "grep", "description": "FTS5 search over historical bash commands, Python exec code, and click coordinates from the local actions store.", "rationale": "Pure local-data search; the API has no endpoint that returns historical bash text.", "via": "mcp-command-mirror"},
-			{"name": "Fleet Doctor", "command": "doctor", "description": "Cross-workspace health rollup: surfaces suspended (over-quota), errored, stuck-creating, and stuck-stopping...", "rationale": "No single Orgo endpoint returns 'all computers across all my workspaces with health flags'; this is a...", "via": "mcp-command-mirror"},
-			{"name": "Idle Computers", "command": "idle", "description": "Sorts running computers by hours-since-last-CLI-action, surfacing burns that could be stopped.", "rationale": "Orgo's API has no concept of idle; this is a join of local action timestamps with live status.", "via": "mcp-command-mirror"},
-			{"name": "Oversized Computers", "command": "oversized", "description": "Flags computers with CPU >= 4 cores or RAM >= 16 GB whose last CLI-recorded action is older than the threshold and...", "rationale": "Configuration-vs-activity heuristic joining the local actions store with computer specs.", "via": "mcp-command-mirror"},
-			{"name": "Bulk Prune", "command": "prune", "description": "Cross-workspace status-filtered batch delete with dry-run by default.", "rationale": "API has per-id delete; cross-workspace status-filtered batched dry-run is the value-add.", "via": "mcp-command-mirror"},
-			{"name": "Cost Breakdown", "command": "cost", "description": "Reconstructs per-computer running-hours from local action timestamps + observed status transitions, multiplies by...", "rationale": "Orgo's API returns no billing data; cost is reconstructed from observed events in the local store.", "via": "mcp-command-mirror"},
+			{"name": "Agent Action Replay", "command": "replay", "description": "Generate a self-contained static HTML timeline of every screenshot, click, bash, and exec your agent ran on a computer.", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Audit Trail", "command": "audit", "description": "Chronological table of every CLI-driven action against your computers in a time window, scoped by workspace,...", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Action Grep", "command": "grep", "description": "FTS5 search over historical bash commands, Python exec code, and click coordinates from the local actions store.", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Fleet Doctor", "command": "fleet", "description": "Cross-workspace health rollup: surfaces suspended (over-quota), errored, stuck-creating, and stuck-stopping...", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Idle Computers", "command": "idle", "description": "Sorts running computers by hours-since-last-CLI-action, surfacing burns that could be stopped.", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Oversized Computers", "command": "oversized", "description": "Flags computers with CPU >= 4 cores or RAM >= 16 GB whose last CLI-recorded action is older than the threshold and...", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Bulk Prune", "command": "prune", "description": "Cross-workspace status-filtered batch delete with dry-run by default.", "rationale": "", "via": "mcp-command-mirror"},
+			{"name": "Cost Breakdown", "command": "cost", "description": "Reconstructs per-computer running-hours from local action timestamps + observed status transitions, multiplies by...", "rationale": "", "via": "mcp-command-mirror"},
 		},
 		"playbook": []map[string]string{
-			{"topic": "Agent Action Replay", "insight": "Orgo's API returns one screenshot or bash result at a time; the timeline is a local artifact built across many calls in the local actions store."},
-			{"topic": "Audit Trail", "insight": "Orgo does not expose a per-account action log; this is reconstructed entirely from the CLI's local actions store."},
-			{"topic": "Action Grep", "insight": "Pure local-data search; the API has no endpoint that returns historical bash text."},
-			{"topic": "Fleet Doctor", "insight": "No single Orgo endpoint returns 'all computers across all my workspaces with health flags'; this is a cross-workspace join with derived fields."},
-			{"topic": "Idle Computers", "insight": "Orgo's API has no concept of idle; this is a join of local action timestamps with live status."},
-			{"topic": "Oversized Computers", "insight": "Configuration-vs-activity heuristic joining the local actions store with computer specs."},
-			{"topic": "Bulk Prune", "insight": "API has per-id delete; cross-workspace status-filtered batched dry-run is the value-add."},
-			{"topic": "Cost Breakdown", "insight": "Orgo's API returns no billing data; cost is reconstructed from observed events in the local store."},
+			{"topic": "Agent Action Replay", "insight": ""},
+			{"topic": "Audit Trail", "insight": ""},
+			{"topic": "Action Grep", "insight": ""},
+			{"topic": "Fleet Doctor", "insight": ""},
+			{"topic": "Idle Computers", "insight": ""},
+			{"topic": "Oversized Computers", "insight": ""},
+			{"topic": "Bulk Prune", "insight": ""},
+			{"topic": "Cost Breakdown", "insight": ""},
 		},
 	}
 	data, _ := json.MarshalIndent(ctx, "", "  ")
