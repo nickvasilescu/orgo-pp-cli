@@ -17,18 +17,13 @@ import (
 // parsing. Shape at v3 adds kind-aware auth env var metadata.
 const agentContextSchemaVersion = "3"
 
-// agentContext is the structured description of this CLI consumed by AI
-// agents. Inspired by Cloudflare's /cdn-cgi/explorer/api runtime endpoint
-// (2026-04-13 Wrangler post): agents can introspect the live CLI without
-// parsing --help or reading source.
+// agentContext is the structured description of this CLI consumed by AI agents.
 type agentContext struct {
-	SchemaVersion              string                 `json:"schema_version"`
-	CLI                        agentContextCLI        `json:"cli"`
-	Auth                       agentContextAuth       `json:"auth"`
-	Discovery                  *agentContextDiscovery `json:"discovery,omitempty"`
-	Commands                   []agentContextCommand  `json:"commands"`
-	AvailableProfiles          []string               `json:"available_profiles"`
-	FeedbackEndpointConfigured bool                   `json:"feedback_endpoint_configured"`
+	SchemaVersion string                 `json:"schema_version"`
+	CLI           agentContextCLI        `json:"cli"`
+	Auth          agentContextAuth       `json:"auth"`
+	Discovery     *agentContextDiscovery `json:"discovery,omitempty"`
+	Commands      []agentContextCommand  `json:"commands"`
 }
 
 type agentContextCLI struct {
@@ -112,14 +107,6 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 			Description: "Set to your API credential.",
 		},
 	}
-	authMode := "bearer_token"
-	if authMode == "" {
-		authMode = "none"
-	}
-	profiles := ListProfileNames()
-	if profiles == nil {
-		profiles = []string{}
-	}
 	return agentContext{
 		SchemaVersion: agentContextSchemaVersion,
 		CLI: agentContextCLI{
@@ -128,13 +115,11 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 			Version:     rootCmd.Version,
 		},
 		Auth: agentContextAuth{
-			Mode:    authMode,
+			Mode:    "bearer_token",
 			EnvVars: envVars,
 		},
-		Discovery:                  buildAgentDiscoveryContext(),
-		Commands:                   collectAgentCommands(rootCmd),
-		AvailableProfiles:          profiles,
-		FeedbackEndpointConfigured: FeedbackEndpointConfigured(),
+		Discovery: buildAgentDiscoveryContext(),
+		Commands:  collectAgentCommands(rootCmd),
 	}
 }
 

@@ -20,10 +20,9 @@ func newComputersResizeComputerCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "computer <id>",
-		Aliases:     []string{"update"},
+		Use:         "resize <id>",
 		Short:       "Live-resizes a running computer's CPU, RAM, disk, or bandwidth. All fields optional — only include what you want...",
-		Example:     "  orgo-pp-cli computers resize computer 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers resize 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "resize.computer", "pp:method": "PATCH", "pp:path": "/computers/{id}/resize"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

@@ -17,10 +17,9 @@ func newComputersMoveComputerCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "computer <id>",
-		Aliases:     []string{"update"},
+		Use:         "move <id>",
 		Short:       "Moves a computer to a different workspace. Both source and destination must be owned by you.",
-		Example:     "  orgo-pp-cli computers move computer 550e8400-e29b-41d4-a716-446655440000 --project-id 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers move 550e8400-e29b-41d4-a716-446655440000 --project-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "move.computer", "pp:method": "PATCH", "pp:path": "/computers/{id}/move"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

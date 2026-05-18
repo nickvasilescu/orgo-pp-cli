@@ -16,10 +16,9 @@ func newComputersCloneComputerCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "computer <id>",
-		Aliases:     []string{"create"},
+		Use:         "clone <id>",
 		Short:       "Creates a copy of a computer with the same disk state. Counts toward your plan's computer limit.",
-		Example:     "  orgo-pp-cli computers clone computer 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers clone 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "clone.computer", "pp:method": "POST", "pp:path": "/computers/{id}/clone"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

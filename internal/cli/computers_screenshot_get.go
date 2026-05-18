@@ -15,9 +15,9 @@ import (
 func newComputersScreenshotGetCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:         "get <id>",
+		Use:         "screenshot <id>",
 		Short:       "Captures a screenshot of the computer display. Returns base64-encoded PNG or a URL.",
-		Example:     "  orgo-pp-cli computers screenshot get 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers screenshot 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "screenshot.get", "pp:method": "GET", "pp:path": "/computers/{id}/screenshot", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
@@ -32,25 +32,13 @@ func newComputersScreenshotGetCmd(flags *rootFlags) *cobra.Command {
 			path = replacePathParam(path, "id", args[0])
 			params := map[string]string{}
 			start := time.Now()
-			data, prov, err := resolveRead(cmd.Context(), c, flags, "screenshot", false, path, params, nil)
+			data, err := c.GetWithHeaders(path, params, nil)
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
-			// PATCH(printing-press novel-features): actions-ledger hook.
-			// Only log live API hits — local-cache reads aren't real actions
-			// and would skew audit/replay timelines. Also skip on --dry-run.
-			if !flags.dryRun && prov.Source == "live" {
+			if !flags.dryRun {
 				_ = logActionBestEffort(cmd.Context(), args[0], "screenshot", nil, string(data), 200, time.Since(start))
 			}
-			// Print provenance to stderr for human-facing output
-			{
-				var countItems []json.RawMessage
-				_ = json.Unmarshal(data, &countItems)
-				printProvenance(cmd, len(countItems), prov)
-			}
-			// For JSON output, wrap with provenance envelope before passing through flags.
-			// --select wins over --compact when both are set; --compact only runs when
-			// no explicit fields were requested.
 			if flags.asJSON || !isTerminal(cmd.OutOrStdout()) {
 				filtered := data
 				if flags.selectFields != "" {
@@ -58,11 +46,7 @@ func newComputersScreenshotGetCmd(flags *rootFlags) *cobra.Command {
 				} else if flags.compact {
 					filtered = compactFields(filtered)
 				}
-				wrapped, wrapErr := wrapWithProvenance(filtered, prov)
-				if wrapErr != nil {
-					return wrapErr
-				}
-				return printOutput(cmd.OutOrStdout(), wrapped, true)
+				return printOutput(cmd.OutOrStdout(), filtered, true)
 			}
 			// For all other output modes (table, csv, plain, quiet), use the standard pipeline
 			if wantsHumanTable(cmd.OutOrStdout(), flags) {

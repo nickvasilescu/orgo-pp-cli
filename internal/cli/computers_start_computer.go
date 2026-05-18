@@ -16,10 +16,9 @@ func newComputersStartComputerCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "computer <id>",
-		Aliases:     []string{"create"},
+		Use:         "start <id>",
 		Short:       "Starts a stopped computer. Computers auto-stop after inactivity.",
-		Example:     "  orgo-pp-cli computers start computer 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers start 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "start.computer", "pp:method": "POST", "pp:path": "/computers/{id}/start"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
