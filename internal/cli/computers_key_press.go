@@ -18,10 +18,9 @@ func newComputersKeyPressCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "press <id>",
-		Aliases:     []string{"create"},
+		Use:         "key <id>",
 		Short:       "Presses a key or key combination (e.g., Enter, Tab, ctrl+c).",
-		Example:     "  orgo-pp-cli computers key press 550e8400-e29b-41d4-a716-446655440000 --key your-token-here",
+		Example:     "  orgo-pp-cli computers key 550e8400-e29b-41d4-a716-446655440000 --key your-token-here",
 		Annotations: map[string]string{"pp:endpoint": "key.press", "pp:method": "POST", "pp:path": "/computers/{id}/key"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

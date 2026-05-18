@@ -4,10 +4,8 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -18,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "1.0.0"
+var version = "2.0.0"
 
 type rootFlags struct {
 	asJSON        bool
@@ -35,12 +33,8 @@ type rootFlags struct {
 	agent         bool
 	selectFields  string
 	configPath    string
-	profileName   string
-	deliverSpec   string
 	timeout       time.Duration
 	rateLimit     float64
-	dataSource    string
-	freshnessMeta any
 
 	// VM-direct routing flags. When vmFrom is set, newClient() resolves the
 	// computer's instance URL and vnc_password via a one-time central-API
@@ -50,11 +44,6 @@ type rootFlags struct {
 	vmFrom  string
 	vmURL   string
 	vmToken string
-
-	// deliverBuf captures command output when --deliver is set to a
-	// non-stdout sink. Flushed to the sink after Execute returns.
-	deliverBuf  *bytes.Buffer
-	deliverSink DeliverSink
 }
 
 // RootCmd returns the Cobra command tree without executing it. The MCP server
@@ -78,12 +67,6 @@ func Execute() error {
 			if suggestion := suggestFlag(flagStr, rootCmd); suggestion != "" {
 				return fmt.Errorf("%w\nhint: did you mean --%s?", err, suggestion)
 			}
-		}
-	}
-	if err == nil && flags.deliverBuf != nil {
-		if derr := Deliver(flags.deliverSink, flags.deliverBuf.Bytes(), flags.compact); derr != nil {
-			fmt.Fprintf(os.Stderr, "warning: deliver to %s:%s failed: %v\n", flags.deliverSink.Scheme, flags.deliverSink.Target, derr)
-			return derr
 		}
 	}
 	return err
@@ -130,42 +113,12 @@ See README.md or the bundled SKILL.md for recipes.`,
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 	rootCmd.PersistentFlags().BoolVar(&humanFriendly, "human-friendly", false, "Enable colored output and rich formatting")
 	rootCmd.PersistentFlags().BoolVar(&flags.agent, "agent", false, "Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)")
-	rootCmd.PersistentFlags().StringVar(&flags.dataSource, "data-source", "auto", "Data source for read commands: auto (live with local fallback), live (API only), local (synced data only)")
-	rootCmd.PersistentFlags().StringVar(&flags.profileName, "profile", "", "Apply values from a saved profile (see 'orgo-pp-cli profile list')")
-	rootCmd.PersistentFlags().StringVar(&flags.deliverSpec, "deliver", "", "Route output to a sink: stdout (default), file:<path>, webhook:<url>")
 	rootCmd.PersistentFlags().Float64Var(&flags.rateLimit, "rate-limit", 0, "Max requests per second (0 to disable)")
 	rootCmd.PersistentFlags().StringVar(&flags.vmFrom, "vm-from", "", "Route computer-use endpoints (bash/click/type/key/scroll/drag/exec/screenshot) directly to the named computer's VM agent; resolves URL + token via a one-time `computers get` call.")
 	rootCmd.PersistentFlags().StringVar(&flags.vmURL, "vm-url", "", "Per-VM agent URL (e.g. http://1.2.3.4:36100). When set with --vm-token, bypasses --vm-from's central API lookup.")
 	rootCmd.PersistentFlags().StringVar(&flags.vmToken, "vm-token", "", "Per-VM bearer token (the computer's vnc_password). Required with --vm-url; falls back to $ORGO_VM_TOKEN.")
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if flags.deliverSpec != "" {
-			sink, err := ParseDeliverSink(flags.deliverSpec)
-			if err != nil {
-				return err
-			}
-			flags.deliverSink = sink
-			if sink.Scheme != "stdout" && sink.Scheme != "" {
-				flags.deliverBuf = &bytes.Buffer{}
-				cmd.SetOut(io.MultiWriter(os.Stdout, flags.deliverBuf))
-			}
-		}
-		if flags.profileName != "" {
-			profile, err := GetProfile(flags.profileName)
-			if err != nil {
-				return err
-			}
-			if profile == nil {
-				available := ListProfileNames()
-				if len(available) == 0 {
-					return fmt.Errorf("profile %q not found (no profiles saved yet; run '%s profile save <name> --<flag> <value>')", flags.profileName, cmd.Root().Name())
-				}
-				return fmt.Errorf("profile %q not found; available: %s", flags.profileName, strings.Join(available, ", "))
-			}
-			if err := ApplyProfileToFlags(cmd, profile); err != nil {
-				return err
-			}
-		}
 		if flags.agent {
 			if !cmd.Flags().Changed("json") {
 				flags.asJSON = true
@@ -183,12 +136,6 @@ See README.md or the bundled SKILL.md for recipes.`,
 				noColor = true
 			}
 		}
-		switch flags.dataSource {
-		case "auto", "live", "local":
-			// valid
-		default:
-			return fmt.Errorf("invalid --data-source value %q: must be auto, live, or local", flags.dataSource)
-		}
 		return nil
 	}
 	rootCmd.AddCommand(newComputersCmd(flags))
@@ -197,14 +144,7 @@ See README.md or the bundled SKILL.md for recipes.`,
 	rootCmd.AddCommand(newDoctorCmd(flags))
 	rootCmd.AddCommand(newAuthCmd(flags))
 	rootCmd.AddCommand(newAgentContextCmd(rootCmd))
-	rootCmd.AddCommand(newProfileCmd(flags))
-	rootCmd.AddCommand(newFeedbackCmd(flags))
-	rootCmd.AddCommand(newWhichCmd(flags))
-	rootCmd.AddCommand(newExportCmd(flags))
-	rootCmd.AddCommand(newImportCmd(flags))
-	rootCmd.AddCommand(newSearchCmd(flags))
 	rootCmd.AddCommand(newSyncCmd(flags))
-	rootCmd.AddCommand(newWorkflowCmd(flags))
 	rootCmd.AddCommand(newVersionCliCmd())
 
 	// Hand-authored novel commands (Phase 3 transcendence layer). These

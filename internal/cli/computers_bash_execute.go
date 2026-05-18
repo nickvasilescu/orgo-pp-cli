@@ -18,10 +18,9 @@ func newComputersBashExecuteCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "execute <id>",
-		Aliases:     []string{"create"},
+		Use:         "bash <id>",
 		Short:       "Executes a bash command on the computer.",
-		Example:     "  orgo-pp-cli computers bash execute 550e8400-e29b-41d4-a716-446655440000 --command example-value",
+		Example:     "  orgo-pp-cli computers bash 550e8400-e29b-41d4-a716-446655440000 --command example-value",
 		Annotations: map[string]string{"pp:endpoint": "bash.execute", "pp:method": "POST", "pp:path": "/computers/{id}/bash"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

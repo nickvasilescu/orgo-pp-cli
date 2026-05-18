@@ -21,10 +21,9 @@ func newComputersClickMouseCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "mouse <id>",
-		Aliases:     []string{"create"},
+		Use:         "click <id>",
 		Short:       "Performs a mouse click at the specified coordinates.",
-		Example:     "  orgo-pp-cli computers click mouse 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers click 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "click.mouse", "pp:method": "POST", "pp:path": "/computers/{id}/click"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

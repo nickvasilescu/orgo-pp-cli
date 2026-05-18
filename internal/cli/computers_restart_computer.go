@@ -16,10 +16,9 @@ func newComputersRestartComputerCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "computer <id>",
-		Aliases:     []string{"create"},
+		Use:         "restart <id>",
 		Short:       "Restarts a computer. Equivalent to stop + start.",
-		Example:     "  orgo-pp-cli computers restart computer 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers restart 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "restart.computer", "pp:method": "POST", "pp:path": "/computers/{id}/restart"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

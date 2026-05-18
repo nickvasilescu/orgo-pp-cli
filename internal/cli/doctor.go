@@ -19,50 +19,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// looksLikeDoctorInterstitial reports whether the response body matches a known
-// bot-detection challenge page (Cloudflare, Akamai, Vercel, AWS WAF, DataDome,
-// PerimeterX). Only fires on the doctor probe — used to distinguish "transport
-// reached the wall" from "transport failed entirely." Returns the vendor name
-// when matched, or empty string when no match.
-//
-// Markers are anchored to <title> or vendor-specific strings to avoid
-// false-positives on benign content. For example, a recipe titled "Just A
-// Moment of Pause Cookies" must NOT match the Cloudflare challenge marker;
-// only "<title>just a moment" (the actual interstitial title) does.
-func looksLikeDoctorInterstitial(body []byte) string {
-	if len(body) == 0 {
-		return ""
-	}
-	limit := len(body)
-	if limit > 8192 {
-		limit = 8192
-	}
-	prefix := strings.ToLower(string(body[:limit]))
-	if !strings.Contains(prefix, "<title") {
-		// Every bot interstitial we recognize sets a <title>; bodies without
-		// one are body-only API responses, not challenge pages.
-		return ""
-	}
-	switch {
-	case strings.Contains(prefix, "<title>just a moment") || // CF JS challenge
-		strings.Contains(prefix, "challenges.cloudflare.com") || // CF Turnstile
-		(strings.Contains(prefix, "attention required") && strings.Contains(prefix, "cloudflare")):
-		return "Cloudflare"
-	case strings.Contains(prefix, "akamai") && (strings.Contains(prefix, "request unsuccessful") || strings.Contains(prefix, "access denied")):
-		return "Akamai"
-	case strings.Contains(prefix, "x-vercel-mitigated") || strings.Contains(prefix, "x-vercel-challenge-token") ||
-		(strings.Contains(prefix, "vercel") && strings.Contains(prefix, "challenge")):
-		return "Vercel"
-	case strings.Contains(prefix, "request blocked") && strings.Contains(prefix, "aws waf"):
-		return "AWS WAF"
-	case strings.Contains(prefix, "datadome") && (strings.Contains(prefix, "blocked") || strings.Contains(prefix, "captcha") || strings.Contains(prefix, "challenge")):
-		return "DataDome"
-	case strings.Contains(prefix, "perimeterx") || strings.Contains(prefix, "px-captcha"):
-		return "PerimeterX"
-	}
-	return ""
-}
-
 func newDoctorCmd(flags *rootFlags) *cobra.Command {
 	var failOn string
 	cmd := &cobra.Command{
@@ -135,33 +91,17 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 					report["api"] = fmt.Sprintf("client init error: %s", clientErr)
 				} else {
 					// Step 1: Basic reachability via the configured transport.
-					reachBody, reachErr := c.Get("/", nil)
+					_, reachErr := c.Get("/", nil)
 					var reachAPIErr *client.APIError
 					switch {
 					case reachErr == nil:
-						// 2xx response — clearly reachable. Still inspect the
-						// body for a known interstitial; some bot walls return
-						// 200 with a JS challenge page.
-						if vendor := looksLikeDoctorInterstitial(reachBody); vendor != "" {
-							report["api"] = fmt.Sprintf("blocked by %s interstitial — the configured transport reached the wall. Try a different network, wait for the IP-level rate limit to clear, or check that the browser-chrome transport is bound correctly.", vendor)
-						} else {
-							report["api"] = "reachable"
-						}
+						report["api"] = "reachable"
 					case errors.As(reachErr, &reachAPIErr):
-						// Non-2xx from the server. The network reached, the
-						// server responded — that's "reachable" for our
-						// purposes. Inspect the response body for a known
-						// interstitial first; otherwise note the status.
-						status := reachAPIErr.StatusCode
-						if vendor := looksLikeDoctorInterstitial([]byte(reachAPIErr.Body)); vendor != "" {
-							report["api"] = fmt.Sprintf("blocked by %s interstitial (HTTP %d) — the configured transport reached the wall.", vendor, status)
-						} else {
-							report["api"] = fmt.Sprintf("reachable (HTTP %d at /)", status)
-						}
+						// Non-2xx from the server. The network reached and the
+						// server responded — that's "reachable" for our purposes.
+						report["api"] = fmt.Sprintf("reachable (HTTP %d at /)", reachAPIErr.StatusCode)
 					default:
-						// Network-level failure: DNS, connection refused, TLS,
-						// transport init, etc. The transport itself didn't
-						// connect.
+						// Network-level failure: DNS, connection refused, TLS, etc.
 						report["api"] = fmt.Sprintf("unreachable: %s", reachErr)
 					}
 

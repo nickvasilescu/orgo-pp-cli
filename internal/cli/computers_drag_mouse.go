@@ -22,10 +22,9 @@ func newComputersDragMouseCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "mouse <id>",
-		Aliases:     []string{"create"},
+		Use:         "drag <id>",
 		Short:       "Performs a mouse drag from start to end coordinates.",
-		Example:     "  orgo-pp-cli computers drag mouse 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers drag 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "drag.mouse", "pp:method": "POST", "pp:path": "/computers/{id}/drag"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

@@ -113,7 +113,7 @@ A small Node bridge is shipped embedded in this binary and auto-deploys to `/tmp
 - **`chrome screenshot <id> --out /tmp/page.png`** — Decoded PNG/JPEG straight to disk. Without `--out`, returns base64 inline.
 - **`chrome console <id> --only-errors`** / **`chrome network <id> --url-pattern "/api/"`** — Buffered console + network for in-page debugging.
 
-  _Reach for `chrome` whenever the task is "do something on a web page" — searching, form filling, scraping, scraping-then-acting. Use pixel-based `computers click mouse` / `computers screenshot get` only for native desktop apps or when the page has no useful DOM (canvases, maps, charts)._
+  _Reach for `chrome` whenever the task is "do something on a web page" — searching, form filling, scraping, scraping-then-acting. Use pixel-based `computers click` / `computers screenshot` only for native desktop apps or when the page has no useful DOM (canvases, maps, charts)._
 
   ```bash
   # Recipe: extract structured data from a page.
@@ -139,9 +139,26 @@ A small Node bridge is shipped embedded in this binary and auto-deploys to `/tmp
 
 **computers** — Provision and manage virtual computers
 
-- `orgo-pp-cli computers create` — Creates a new virtual computer in a workspace. The computer starts automatically after creation.
+- `orgo-pp-cli computers create` — Creates a new virtual computer in a workspace.
 - `orgo-pp-cli computers delete` — Permanently deletes a computer and all its data.
 - `orgo-pp-cli computers get` — Returns computer details including current status.
+- `orgo-pp-cli computers bash <id> --command "..."` — Execute a bash command on a computer.
+- `orgo-pp-cli computers click <id> --x N --y N` — Pixel-level mouse click.
+- `orgo-pp-cli computers clone <id>` — Clone a computer's disk state.
+- `orgo-pp-cli computers drag <id> --from-x N --from-y N --to-x N --to-y N` — Mouse drag.
+- `orgo-pp-cli computers exec <id> --code "..."` — Run Python on the computer.
+- `orgo-pp-cli computers key <id> --key "ctrl+c"` — Press a key or chord.
+- `orgo-pp-cli computers move <id> --project-id <ws>` — Move computer to a different workspace.
+- `orgo-pp-cli computers resize <id> --cpu N --ram N` — Live resize.
+- `orgo-pp-cli computers restart <id>` / `start <id>` / `stop <id>` — Lifecycle.
+- `orgo-pp-cli computers screenshot <id>` — Capture display as base64 PNG or URL.
+- `orgo-pp-cli computers scroll <id> --direction up|down --delta N` — Wheel scroll.
+- `orgo-pp-cli computers type <id> --text "..."` — Type text.
+- `orgo-pp-cli computers vnc-password <id>` — Get VNC password.
+- `orgo-pp-cli computers wait <id> --seconds N` — Pause.
+- `orgo-pp-cli computers auto-stop {get,update}` / `computers stream {get-status,start,stop}` — Sub-groups.
+
+Note (v2.0.0): single-operation subcommands are flattened — use `computers bash <id>` not `computers bash execute <id>`. `auto-stop` and `stream` keep their two/three-child sub-groups.
 
 **files** — Upload and download files
 
@@ -158,16 +175,6 @@ A small Node bridge is shipped embedded in this binary and auto-deploys to `/tmp
 - `orgo-pp-cli workspaces get` — Returns a workspace by ID, including its computers.
 - `orgo-pp-cli workspaces list` — Returns all workspaces for the authenticated user.
 
-
-### Finding the right command
-
-When you know what you want to do but not which command does it, ask the CLI directly:
-
-```bash
-orgo-pp-cli which "<capability in your own words>"
-```
-
-`which` resolves a natural-language capability query to the best matching command from this CLI's curated feature index. Exit code `0` means at least one match; exit code `2` means no confident match — fall back to `--help` or use a narrower query.
 
 ## Recipes
 
@@ -222,69 +229,15 @@ Run `orgo-pp-cli doctor` to verify setup.
 
 Add `--agent` to any command. Expands to: `--json --compact --no-input --no-color --yes`.
 
-- **Pipeable** — JSON on stdout, errors on stderr
+- **Pipeable** — raw API JSON on stdout, errors on stderr. No `{"results": ..., "meta": ...}` envelope; `.` (the whole document) is the data.
 - **Filterable** — `--select` keeps a subset of fields. Dotted paths descend into nested structures; arrays traverse element-wise. Critical for keeping context small on verbose APIs:
 
   ```bash
   orgo-pp-cli computers get mock-value --agent --select id,name,status
   ```
 - **Previewable** — `--dry-run` shows the request without sending
-- **Offline-friendly** — sync/search commands can use the local SQLite store when available
 - **Non-interactive** — never prompts, every input is a flag
 - **Explicit retries** — use `--idempotent` only when an already-existing create should count as success, and `--ignore-missing` only when a missing delete target should count as success
-
-### Response envelope
-
-Commands that read from the local store or the API wrap output in a provenance envelope:
-
-```json
-{
-  "meta": {"source": "live" | "local", "synced_at": "...", "reason": "..."},
-  "results": <data>
-}
-```
-
-Parse `.results` for data and `.meta.source` to know whether it's live or local. A human-readable `N results (live)` summary is printed to stderr only when stdout is a terminal — piped/agent consumers get pure JSON on stdout.
-
-## Agent Feedback
-
-When you (or the agent) notice something off about this CLI, record it:
-
-```
-orgo-pp-cli feedback "the --since flag is inclusive but docs say exclusive"
-orgo-pp-cli feedback --stdin < notes.txt
-orgo-pp-cli feedback list --json --limit 10
-```
-
-Entries are stored locally at `~/.orgo-pp-cli/feedback.jsonl`. They are never POSTed unless `ORGO_FEEDBACK_ENDPOINT` is set AND either `--send` is passed or `ORGO_FEEDBACK_AUTO_SEND=true`. Default behavior is local-only.
-
-Write what *surprised* you, not a bug report. Short, specific, one line: that is the part that compounds.
-
-## Output Delivery
-
-Every command accepts `--deliver <sink>`. The output goes to the named sink in addition to (or instead of) stdout, so agents can route command results without hand-piping. Three sinks are supported:
-
-| Sink | Effect |
-|------|--------|
-| `stdout` | Default; write to stdout only |
-| `file:<path>` | Atomically write output to `<path>` (tmp + rename) |
-| `webhook:<url>` | POST the output body to the URL (`application/json` or `application/x-ndjson` when `--compact`) |
-
-Unknown schemes are refused with a structured error naming the supported set. Webhook failures return non-zero and log the URL + HTTP status on stderr.
-
-## Named Profiles
-
-A profile is a saved set of flag values, reused across invocations. Use it when a scheduled agent calls the same command every run with the same configuration - HeyGen's "Beacon" pattern.
-
-```
-orgo-pp-cli profile save briefing --json
-orgo-pp-cli --profile briefing computers get mock-value
-orgo-pp-cli profile list --json
-orgo-pp-cli profile show briefing
-orgo-pp-cli profile delete briefing --yes
-```
-
-Explicit flags always win over profile values; profile values win over defaults. `agent-context` lists all available profiles under `available_profiles` so introspecting agents discover them at runtime.
 
 ## Exit Codes
 

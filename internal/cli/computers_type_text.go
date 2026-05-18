@@ -17,10 +17,9 @@ func newComputersTypeTextCmd(flags *rootFlags) *cobra.Command {
 	var stdinBody bool
 
 	cmd := &cobra.Command{
-		Use:         "text <id>",
-		Aliases:     []string{"create"},
+		Use:         "type <id>",
 		Short:       "Types text on the computer keyboard.",
-		Example:     "  orgo-pp-cli computers type text 550e8400-e29b-41d4-a716-446655440000 --text example-value",
+		Example:     "  orgo-pp-cli computers type 550e8400-e29b-41d4-a716-446655440000 --text example-value",
 		Annotations: map[string]string{"pp:endpoint": "type.text", "pp:method": "POST", "pp:path": "/computers/{id}/type"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

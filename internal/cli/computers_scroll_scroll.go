@@ -19,9 +19,8 @@ func newComputersScrollScrollCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "scroll <id>",
-		Aliases:     []string{"create"},
 		Short:       "Scrolls the mouse wheel up or down.",
-		Example:     "  orgo-pp-cli computers scroll scroll 550e8400-e29b-41d4-a716-446655440000 --direction example-value",
+		Example:     "  orgo-pp-cli computers scroll 550e8400-e29b-41d4-a716-446655440000 --direction example-value",
 		Annotations: map[string]string{"pp:endpoint": "scroll.scroll", "pp:method": "POST", "pp:path": "/computers/{id}/scroll"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

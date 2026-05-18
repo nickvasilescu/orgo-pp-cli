@@ -6,7 +6,7 @@
 - **Browser use (Chrome)** — drive the page at the **DOM level** with element refs, find-by-intent, JavaScript evaluation, and console/network inspection. 16 subcommands; the bridge auto-deploys on first use.
 - **Audit + fleet + cost** — every action lands in a local SQLite store, so `replay`, `audit`, `grep`, `fleet`, `idle`, `oversized`, `prune`, and `cost` see what no live Orgo API call can.
 
-Everything also ships as an **MCP server** (65 tools), so one install gets your agent the full surface from Claude Desktop, Claude Code, or any MCP host.
+Everything also ships as an **MCP server** (61 tools), so one install gets your agent the full surface from Claude Desktop, Claude Code, or any MCP host.
 
 Learn more about Orgo at [orgo.ai](https://orgo.ai).
 
@@ -97,7 +97,7 @@ orgo-pp-cli doctor
 #    (workspaces list returns workspaces with nested .desktops arrays —
 #     there's no top-level `computers list`; use jq to pick out computers)
 orgo-pp-cli workspaces list
-orgo-pp-cli workspaces list --agent | jq '.results.projects[].desktops[] | {id, name, status}'
+orgo-pp-cli workspaces list --agent | jq '.projects[].desktops[] | {id, name, status}'
 
 # 3. Provision a fresh desktop
 orgo-pp-cli computers create \
@@ -105,8 +105,8 @@ orgo-pp-cli computers create \
     --name agent-1 --cpu 2 --ram 8
 
 # 4. Drive it (pixel-based computer use)
-orgo-pp-cli computers bash execute <id> --command 'ls /home/orgo'
-orgo-pp-cli computers screenshot get <id>      # signed URL (central) or base64 inline (VM-direct)
+orgo-pp-cli computers bash <id> --command 'ls /home/orgo'
+orgo-pp-cli computers screenshot <id>      # signed URL (central) or base64 inline (VM-direct)
 
 # Need a real PNG on disk right away? Use chrome (decodes base64 for you):
 orgo-pp-cli chrome screenshot <id> --out /tmp/page.png
@@ -128,7 +128,7 @@ orgo-pp-cli audit --since 1h --agent
 | Mode | Setup | Best for |
 |---|---|---|
 | **Direct CLI** | `export ORGO_API_KEY=...` | Humans driving Orgo from a terminal, scripts, cron, CI |
-| **MCP server** | `claude mcp add orgo -- orgo-pp-mcp` | AI agents in Claude Desktop, Claude Code, or any MCP host — 65 tools from one server |
+| **MCP server** | `claude mcp add orgo -- orgo-pp-mcp` | AI agents in Claude Desktop, Claude Code, or any MCP host — 61 tools from one server |
 | **In-VM agent** | Set `ORGO_VM_URL` + `ORGO_VM_TOKEN` | Agents born inside an Orgo VM that want ~3× lower per-call latency via VM-direct routing |
 
 All three modes use the same binary, the same commands, the same flags. Pick whichever fits your stack.
@@ -152,14 +152,14 @@ The CLI exposes two complementary ways to drive a virtual desktop. Both work in 
 ### Computer use — 8 pixel primitives
 
 ```bash
-orgo-pp-cli computers bash execute      <id> --command 'whatever'
-orgo-pp-cli computers exec execute-python <id> --code 'print(1+1)'
-orgo-pp-cli computers screenshot get    <id>                        # returns signed URL (central) or base64 inline (VM-direct)
-orgo-pp-cli computers click mouse       <id> --x 640 --y 360 [--button right] [--double]
-orgo-pp-cli computers type text         <id> --text "hello"
-orgo-pp-cli computers key press         <id> --key Enter        # or ctrl+c, alt+F4, etc.
-orgo-pp-cli computers scroll scroll     <id> --direction down --amount 3
-orgo-pp-cli computers drag mouse        <id> --start-x 100 --start-y 100 --end-x 500 --end-y 400
+orgo-pp-cli computers bash      <id> --command 'whatever'
+orgo-pp-cli computers exec <id> --code 'print(1+1)'
+orgo-pp-cli computers screenshot    <id>                        # returns signed URL (central) or base64 inline (VM-direct)
+orgo-pp-cli computers click       <id> --x 640 --y 360 [--button right] [--double]
+orgo-pp-cli computers type         <id> --text "hello"
+orgo-pp-cli computers key         <id> --key Enter        # or ctrl+c, alt+F4, etc.
+orgo-pp-cli computers scroll     <id> --direction down --amount 3
+orgo-pp-cli computers drag        <id> --start-x 100 --start-y 100 --end-x 500 --end-y 400
 ```
 
 All 8 inherit **VM-direct routing** — add `--vm-from <id>` (or `--vm-url`/`--vm-token`) for ~70% lower per-call latency.
@@ -172,7 +172,7 @@ orgo-pp-cli computers start    <id>                # / stop / restart
 orgo-pp-cli computers clone    <id>                # snapshot + new VM
 orgo-pp-cli computers resize   <id> --vcpus 4 --mem-gb 16
 orgo-pp-cli computers move     <id> --project-id <other-ws>
-orgo-pp-cli computers wait wait <id> --duration 5  # sleep in scripts
+orgo-pp-cli computers wait <id> --duration 5  # sleep in scripts
 orgo-pp-cli computers get      <id>                # full metadata including url + vnc_password
 orgo-pp-cli computers delete   <id>
 ```
@@ -180,7 +180,7 @@ orgo-pp-cli computers delete   <id>
 There's no top-level `computers list` — use `workspaces list` and pull the nested `desktops` arrays:
 
 ```bash
-orgo-pp-cli workspaces list --agent | jq '.results.projects[].desktops[] | {id, name, status, url}'
+orgo-pp-cli workspaces list --agent | jq '.projects[].desktops[] | {id, name, status, url}'
 ```
 
 ### Browser use — `chrome` subcommand (16 tools)
@@ -232,7 +232,7 @@ orgo-pp-cli chrome scroll <id> --direction down --amount 5
 
 **Full command set (16):** `navigate`, `tabs`, `new-tab`, `switch-tab`, `read-page`, `find`, `page-text`, `screenshot`, `click`, `type`, `form-input`, `scroll`, `evaluate`, `console`, `network`, `resize`.
 
-**VM-direct routing inherited transparently.** Chrome calls bottom out on `/computers/{id}/bash`, which is itself VM-bypassable — so `chrome <verb> --vm-from <id>` cuts latency the same way it does for `computers bash execute`.
+**VM-direct routing inherited transparently.** Chrome calls bottom out on `/computers/{id}/bash`, which is itself VM-bypassable — so `chrome <verb> --vm-from <id>` cuts latency the same way it does for `computers bash`.
 
 **Requirements (inside the VM):** Chrome (any of `google-chrome`, `chromium`, `chromium-browser`), Node 18+, an X display. All present by default on Orgo VMs.
 
@@ -322,24 +322,24 @@ Computer-use commands (`bash`, `click`, `type`, `key`, `scroll`, `drag`, `exec`,
 # One-call resolver: a single central GET /computers/<id> fetches the VM's
 # instance URL and vnc_password, then every subsequent call in the same
 # invocation goes direct to the VM.
-orgo-pp-cli computers bash execute <id> --vm-from <id> --command 'hostname'
+orgo-pp-cli computers bash <id> --vm-from <id> --command 'hostname'
 
 # Explicit: useful for agents born inside the VM with the values injected.
 # Token is the computer's vnc_password (from `computers get`).
-orgo-pp-cli computers screenshot get <id> \
+orgo-pp-cli computers screenshot <id> \
     --vm-url http://1.2.3.4:36100 \
     --vm-token <vnc_password>
 
 # Env-injected (no flags needed) — recommended for long-running in-VM loops.
 export ORGO_VM_URL=http://1.2.3.4:36100
 export ORGO_VM_TOKEN=<vnc_password>
-orgo-pp-cli computers click mouse <id> --x 640 --y 360
+orgo-pp-cli computers click <id> --x 640 --y 360
 orgo-pp-cli chrome read-page <id> --filter interactive
 ```
 
 **Which commands bypass:** `bash`, `click`, `type`, `key`, `scroll`, `drag`, `exec`, `screenshot`. Every `chrome` subcommand inherits this transparently because it bottoms out on the bash channel. Everything else (workspace/computer management, files, fleet ops, audit, etc.) continues to use the central API — those endpoints don't exist on the per-VM agent. Non-bypassable commands run normally when `--vm-*` is set, so a mixed workload works without juggling flags.
 
-**Response shape note for `computers screenshot get`:** central API returns `{image: <signed-Supabase-URL>, metadata: {...}}`; VM-direct returns `{image: <base64-PNG>, format, encoding, width, height}`. Both deliver a complete screenshot — they encode it differently. Inspect the `encoding` field or check whether `image` starts with `https://` vs `iVBOR...`.
+**Response shape note for `computers screenshot`:** central API returns `{image: <signed-Supabase-URL>, metadata: {...}}`; VM-direct returns `{image: <base64-PNG>, format, encoding, width, height}`. Both deliver a complete screenshot — they encode it differently. Inspect the `encoding` field or check whether `image` starts with `https://` vs `iVBOR...`.
 
 **Caveats:**
 - The response cache is bypassed for VM-direct calls (no point caching local-network sub-200ms responses).
@@ -354,14 +354,14 @@ orgo-pp-cli chrome read-page <id> --filter interactive
 
 ```bash
 # Pick a workspace
-WS=$(orgo-pp-cli workspaces list --agent | jq -r '.results.projects[0].id')
+WS=$(orgo-pp-cli workspaces list --agent | jq -r '.projects[0].id')
 
 # Spin up; --agent envelopes POST results under .data
 ID=$(orgo-pp-cli computers create --workspace-id "$WS" --name task-$$ --cpu 2 --ram 4 --agent | jq -r '.data.id')
 
 # Wait for it to be ready (in seconds), then work
-orgo-pp-cli computers wait wait "$ID" --duration 10
-orgo-pp-cli computers exec execute-python "$ID" --code '
+orgo-pp-cli computers wait "$ID" --duration 10
+orgo-pp-cli computers exec "$ID" --code '
 import urllib.request, json
 data = json.load(urllib.request.urlopen("https://httpbin.org/json"))
 print(data["slideshow"]["title"])'
@@ -476,7 +476,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 </details>
 
-After install, the agent has 65 tools across:
+After install, the agent has 61 tools across:
 
 - **Typed HTTP endpoint tools** (~33) — `workspaces_*`, `computers_*`, `files_*`, etc.
 - **`chrome_*`** (16) — DOM-aware browser automation
@@ -535,7 +535,6 @@ Designed for AI agent and CI consumption:
 - **Explicit retries** — `--idempotent` for create-retries, `--ignore-missing` for delete-retries (both make repeat calls a no-op success)
 - **Confirmable** — `--yes` for destructive ops, `--no-input` to fail rather than prompt
 - **Piped input** — write commands accept structured JSON on stdin when their help lists `--stdin`
-- **Offline-friendly** — sync/search commands can use the local SQLite store
 
 **Exit codes:**
 
@@ -595,12 +594,12 @@ Config file: `~/.config/orgo-pp-cli/config.toml` (optional — env vars are usua
 - Ad-hoc `curl` calls against the API don't populate the ledger.
 
 **`chrome` first-call timeout**
-- The bridge auto-deploys on the first call (~6s). If it times out, run `orgo-pp-cli computers bash execute <id> --command 'cat /tmp/orgo-chrome-bridge.log | tail -20'` to see why the bridge failed to start.
+- The bridge auto-deploys on the first call (~6s). If it times out, run `orgo-pp-cli computers bash <id> --command 'cat /tmp/orgo-chrome-bridge.log | tail -20'` to see why the bridge failed to start.
 - Confirm Chrome + Node 18+ + an X display exist in the VM (all present by default).
 
 **VM-direct call fails with HTTP 401**
 - The per-VM agent uses the computer's `vnc_password` as its bearer, not `ORGO_API_KEY`.
-- Fetch it with `orgo-pp-cli computers vnc-password get <id>` (or use `--vm-from <id>` to resolve automatically).
+- Fetch it with `orgo-pp-cli computers vnc-password <id>` (or use `--vm-from <id>` to resolve automatically).
 
 ---
 

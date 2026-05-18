@@ -18,9 +18,8 @@ func newComputersWaitWaitCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "wait <id>",
-		Aliases:     []string{"create"},
 		Short:       "Pauses execution for the specified duration.",
-		Example:     "  orgo-pp-cli computers wait wait 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  orgo-pp-cli computers wait 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "wait.wait", "pp:method": "POST", "pp:path": "/computers/{id}/wait"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
